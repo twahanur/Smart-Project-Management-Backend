@@ -1,0 +1,27 @@
+// ============================================================
+// ACTIVITY LOG model
+// ============================================================
+
+model ActivityLog {
+  id          String             @id @default(cuid())
+  user_id     String?
+  board_id    String?
+  card_id     String?
+  action_type ActivityActionType
+  entity_type ActivityEntityType
+  entity_id   String
+  description String
+  metadata    Json?
+  created_at  DateTime           @default(now())
+
+  // Relations
+  user  User?  @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  board Board? @relation(fields: [board_id], references: [id], onDelete: Cascade)
+  card  Card?  @relation(fields: [card_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([board_id])
+  @@index([card_id])
+  @@index([created_at])
+  @@map("activity_logs")
+}

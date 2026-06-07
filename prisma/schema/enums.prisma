@@ -1,0 +1,85 @@
+// ============================================================
+// ENUMS — All enumerated types
+// ============================================================
+
+enum UserRole {
+  admin
+  project_manager
+  team_member
+}
+
+enum WorkspaceRole {
+  owner
+  admin
+  member
+}
+
+enum BoardRole {
+  admin
+  member
+  observer
+}
+
+enum BoardStatus {
+  active
+  completed
+  on_hold
+  archived
+}
+
+enum BoardVisibility {
+  private
+  workspace
+  public
+}
+
+enum CardPriority {
+  high
+  medium
+  low
+}
+
+enum CardStatus {
+  todo
+  in_progress
+  completed
+}
+
+enum NotificationType {
+  card_assigned
+  card_unassigned
+  card_status_changed
+  card_commented
+  card_due_soon
+  board_created
+  board_updated
+  member_added
+  member_removed
+  general
+}
+
+enum ActivityEntityType {
+  workspace
+  board
+  list
+  card
+  checklist
+  comment
+  member
+  user
+}
+
+enum ActivityActionType {
+  created
+  updated
+  deleted
+  assigned
+  unassigned
+  status_changed
+  commented
+  member_added
+  member_removed
+  completed
+  reopened
+  moved
+}

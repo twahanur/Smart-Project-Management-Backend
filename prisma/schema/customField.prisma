@@ -1,0 +1,46 @@
+// ============================================================
+// CUSTOM FIELD models
+// ============================================================
+
+enum CustomFieldType {
+  text
+  number
+  date
+  checkbox
+  dropdown
+}
+
+model CustomField {
+  id           String          @id @default(cuid())
+  board_id     String
+  name         String
+  type         CustomFieldType
+  options      String[]        // For dropdown options, serialized or list of strings
+  created_at   DateTime        @default(now())
+  updated_at   DateTime        @updatedAt
+
+  // Relations
+  board  Board                  @relation(fields: [board_id], references: [id], onDelete: Cascade)
+  values CardCustomFieldValue[]
+
+  @@index([board_id])
+  @@map("custom_fields")
+}
+
+model CardCustomFieldValue {
+  id         String   @id @default(cuid())
+  card_id    String
+  field_id   String
+  value      String   // Stored as serialized string
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  card  Card        @relation(fields: [card_id], references: [id], onDelete: Cascade)
+  field CustomField @relation(fields: [field_id], references: [id], onDelete: Cascade)
+
+  @@unique([card_id, field_id])
+  @@index([card_id])
+  @@index([field_id])
+  @@map("card_custom_field_values")
+}

@@ -1,0 +1,66 @@
+// ============================================================
+// BOARD models
+// ============================================================
+
+model Board {
+  id              String          @id @default(cuid())
+  workspace_id    String
+  name            String
+  description     String?
+  cover_image_url String?
+  background_color String?
+  visibility      BoardVisibility @default(workspace)
+  status          BoardStatus     @default(active)
+  created_by      String
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+
+  // Relations
+  workspace      Workspace      @relation(fields: [workspace_id], references: [id], onDelete: Cascade)
+  creator        User           @relation("BoardCreator", fields: [created_by], references: [id], onDelete: Restrict)
+  members        BoardMember[]
+  lists          BoardList[]
+  cards          Card[]
+  starred_by     StarredBoard[]
+  labels         Label[]
+  activity_logs  ActivityLog[]
+  custom_fields  CustomField[]
+
+  @@index([workspace_id])
+  @@index([created_by])
+  @@index([status])
+  @@map("boards")
+}
+
+model BoardMember {
+  id        String    @id @default(cuid())
+  board_id  String
+  user_id   String
+  role      BoardRole @default(member)
+  joined_at DateTime  @default(now())
+
+  // Relations
+  board Board @relation(fields: [board_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([board_id, user_id])
+  @@index([board_id])
+  @@index([user_id])
+  @@map("board_members")
+}
+
+model StarredBoard {
+  id         String   @id @default(cuid())
+  user_id    String
+  board_id   String
+  created_at DateTime @default(now())
+
+  // Relations
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  board Board @relation(fields: [board_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, board_id])
+  @@index([user_id])
+  @@index([board_id])
+  @@map("starred_boards")
+}

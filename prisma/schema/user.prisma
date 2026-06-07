@@ -1,0 +1,54 @@
+// ============================================================
+// USER models
+// ============================================================
+
+model User {
+  id                String    @id @default(cuid())
+  name              String
+  email             String    @unique
+  password_hash     String
+  avatar_url        String?
+  role              UserRole  @default(team_member)
+  bio               String?
+  is_active         Boolean   @default(true)
+  last_login        DateTime?
+  reset_token       String?
+  reset_token_expiry DateTime?
+  refresh_token     String?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  // Relations
+  preferences              UserPreference?
+  workspaces_created       Workspace[]       @relation("WorkspaceCreator")
+  workspace_members        WorkspaceMember[]
+  boards_created           Board[]           @relation("BoardCreator")
+  board_members            BoardMember[]
+  starred_boards           StarredBoard[]
+  cards_created            Card[]            @relation("CardCreator")
+  card_assignments         CardMember[]
+  card_watching            CardWatcher[]
+  assigned_checklist_items ChecklistItem[]   @relation("ChecklistItemAssignee")
+  comments                 Comment[]
+  attachments              Attachment[]
+  activity_logs            ActivityLog[]
+  notifications            Notification[]
+
+  @@index([email])
+  @@index([role])
+  @@index([is_active])
+  @@map("users")
+}
+
+model UserPreference {
+  id                  String   @id @default(cuid())
+  user_id             String   @unique
+  theme               String   @default("light")
+  email_notifications Boolean  @default(true)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}

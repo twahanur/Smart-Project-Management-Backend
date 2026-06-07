@@ -1,0 +1,746 @@
+{
+  "info": {
+    "name": "Trello-Style Workspace Board System API",
+    "description": "Premium Trello-Style Board, Workspace, List, Card, Checklist, Label, and Attachment API Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "accessToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "workspaceId", "value": "" },
+    { "key": "boardId", "value": "" },
+    { "key": "listId", "value": "" },
+    { "key": "cardId", "value": "" },
+    { "key": "checklistId", "value": "" },
+    { "key": "itemId", "value": "" },
+    { "key": "labelId", "value": "" },
+    { "key": "commentId", "value": "" },
+    { "key": "notificationId", "value": "" },
+    { "key": "customFieldId", "value": "" },
+    { "key": "attachmentId", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{accessToken}}" }]
+  },
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Developer\",\n  \"email\": \"jane.dev@example.com\",\n  \"password\": \"Jane@1234\",\n  \"role\": \"team_member\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@demo.com\",\n  \"password\": \"Admin@123\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                "  // refreshToken is set via httpOnly cookie by the server.",
+                "  // If testing without cookies, manually set it from Set-Cookie header.",
+                "  const cookieHeader = pm.response.headers.get('Set-Cookie') || '';",
+                "  const match = cookieHeader.match(/refreshToken=([^;]+)/);",
+                "  if (match) pm.collectionVariables.set('refreshToken', match[1]);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/refresh",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Server reads refreshToken from httpOnly cookie automatically. Body fallback is also supported if cookie is unavailable."
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                "  pm.test('Access token refreshed successfully', () => {",
+                "    pm.expect(res.data).to.have.property('accessToken');",
+                "  });",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Demo Login (PM)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/demo-login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"project_manager\"\n}" }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                "  const cookieHeader = pm.response.headers.get('Set-Cookie') || '';",
+                "  const match = cookieHeader.match(/refreshToken=([^;]+)/);",
+                "  if (match) pm.collectionVariables.set('refreshToken', match[1]);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Demo Login (Member)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/demo-login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"team_member\"\n}" }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) {",
+                "  pm.collectionVariables.set('accessToken', res.data.accessToken);",
+                "  const cookieHeader = pm.response.headers.get('Set-Cookie') || '';",
+                "  const match = cookieHeader.match(/refreshToken=([^;]+)/);",
+                "  if (match) pm.collectionVariables.set('refreshToken', match[1]);",
+                "}"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/auth/logout"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏢 Workspaces",
+      "item": [
+        {
+          "name": "Get My Workspaces",
+          "request": { "method": "GET", "url": "{{baseUrl}}/workspaces" }
+        },
+        {
+          "name": "Create Workspace",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/workspaces",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Product Ops Workspace\",\n  \"description\": \"For operations & roadmap plans\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) { pm.collectionVariables.set('workspaceId', res.data.id); }"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Get Workspace by ID",
+          "request": { "method": "GET", "url": "{{baseUrl}}/workspaces/{{workspaceId}}" }
+        },
+        {
+          "name": "Update Workspace",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Product Ops Workspace Updated\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Add Member to Workspace",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}/members",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"member@demo.com\",\n  \"role\": \"member\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Workspace Member Role",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}/members/PASTE_USER_ID_HERE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Remove Member from Workspace",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}/members/PASTE_USER_ID_HERE"
+          }
+        },
+        {
+          "name": "Delete Workspace",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/workspaces/{{workspaceId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Boards",
+      "item": [
+        {
+          "name": "Get Workspace Boards",
+          "request": { "method": "GET", "url": "{{baseUrl}}/boards/workspaces/{{workspaceId}}/boards" }
+        },
+        {
+          "name": "Create Board",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/workspaces/{{workspaceId}}/boards",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mobile App Board\",\n  \"description\": \"Kanban board for android/ios redesign\",\n  \"background_color\": \"#3b82f6\",\n  \"visibility\": \"workspace\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) { pm.collectionVariables.set('boardId', res.data.id); }"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Get Board Details by ID",
+          "request": { "method": "GET", "url": "{{baseUrl}}/boards/{{boardId}}" }
+        },
+        {
+          "name": "Update Board Details",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/boards/{{boardId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Mobile App Board Renamed\",\n  \"status\": \"active\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Toggle Star Board",
+          "request": { "method": "POST", "url": "{{baseUrl}}/boards/{{boardId}}/star" }
+        },
+        {
+          "name": "Copy Board",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/copy"
+          }
+        },
+        {
+          "name": "Add Member to Board",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/members",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"member@demo.com\",\n  \"role\": \"member\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Board Member Role",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/boards/{{boardId}}/members/PASTE_USER_ID_HERE",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Remove Member from Board",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/boards/{{boardId}}/members/PASTE_USER_ID_HERE"
+          }
+        },
+        {
+          "name": "Delete Board",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/boards/{{boardId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 Board Lists",
+      "item": [
+        {
+          "name": "Get Board Lists",
+          "request": { "method": "GET", "url": "{{baseUrl}}/boards/{{boardId}}/lists" }
+        },
+        {
+          "name": "Create Board List",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/lists",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Testing Q/A\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) { pm.collectionVariables.set('listId', res.data.id); }"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Update Board List",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/boards/{{boardId}}/lists/{{listId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Testing Q/A Renamed\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reorder Board Lists",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/boards/{{boardId}}/lists/reorder",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lists\": [\n    { \"id\": \"{{listId}}\", \"position\": 1500 }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Sort List Cards",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/lists/{{listId}}/sort",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sortBy\": \"title\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Board List (Archive)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/boards/{{boardId}}/lists/{{listId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🃏 Cards",
+      "item": [
+        {
+          "name": "Create Card",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/lists/{{listId}}/cards",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Implement OAuth Flow\",\n  \"description\": \"Integrate signin with google and apple ID\",\n  \"priority\": \"high\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) { pm.collectionVariables.set('cardId', res.data.id); }"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Get Card Details",
+          "request": { "method": "GET", "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}" }
+        },
+        {
+          "name": "Update Card Details",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"description\": \"Updated description mapping\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Move Card to List",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/move",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetListId\": \"{{listId}}\",\n  \"position\": 2000\n}"
+            }
+          }
+        },
+        {
+          "name": "Assign Card to Member",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/assign",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"PASTE_USER_ID_HERE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Unassign Member from Card",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/assign/PASTE_USER_ID_HERE"
+          }
+        },
+        {
+          "name": "Toggle Watch Card",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/watch"
+          }
+        },
+        {
+          "name": "Duplicate Card",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/duplicate"
+          }
+        },
+        {
+          "name": "Delete Card",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "✅ Checklists",
+      "item": [
+        {
+          "name": "Create Checklist",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/checklists",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Security Tests\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) { pm.collectionVariables.set('checklistId', res.data.id); }"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Add Checklist Item",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/checklists/{{checklistId}}/items",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Verify CSRF protection enabled\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) { pm.collectionVariables.set('itemId', res.data.id); }"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Toggle Checklist Item Status",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/boards/{{boardId}}/checklists/{{checklistId}}/items/{{itemId}}/toggle"
+          }
+        },
+        {
+          "name": "Delete Checklist",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/boards/{{boardId}}/checklists/{{checklistId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏷️ Labels",
+      "item": [
+        {
+          "name": "Create Board Label",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/labels",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hotfix Required\",\n  \"color\": \"#dc2626\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) { pm.collectionVariables.set('labelId', res.data.id); }"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Assign Label to Card",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/labels",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"labelId\": \"{{labelId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Unassign Label from Card",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/labels/{{labelId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "💬 Comments",
+      "item": [
+        {
+          "name": "Get Card Comments",
+          "request": { "method": "GET", "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/comments" }
+        },
+        {
+          "name": "Create Comment",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/comments",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"OAuth configurations are updated in vault!\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) { pm.collectionVariables.set('commentId', res.data.id); }"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Create Threaded Reply",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/comments",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Perfect, thanks for updating!\",\n  \"parentId\": \"{{commentId}}\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏷️ Custom Fields",
+      "item": [
+        {
+          "name": "Create Custom Field Def",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/custom-fields",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Story Points\",\n  \"type\": \"number\"\n}"
+            }
+          },
+          "event": [{
+            "listen": "test",
+            "script": {
+              "exec": [
+                "const res = pm.response.json();",
+                "if (res.success) { pm.collectionVariables.set('customFieldId', res.data.id); }"
+              ]
+            }
+          }]
+        },
+        {
+          "name": "Get Board Custom Fields Defs",
+          "request": { "method": "GET", "url": "{{baseUrl}}/boards/{{boardId}}/custom-fields" }
+        },
+        {
+          "name": "Set Card Custom Field Value",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/boards/{{boardId}}/custom-fields/cards/{{cardId}}/fields/{{customFieldId}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"8\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Card Custom Field Values",
+          "request": { "method": "GET", "url": "{{baseUrl}}/boards/{{boardId}}/custom-fields/cards/{{cardId}}/values" }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard",
+      "item": [
+        {
+          "name": "Get KPIs Stats",
+          "request": { "method": "GET", "url": "{{baseUrl}}/dashboard/stats" }
+        },
+        {
+          "name": "Member Workload breakdown",
+          "request": { "method": "GET", "url": "{{baseUrl}}/dashboard/workload" }
+        },
+        {
+          "name": "Overdue Cards",
+          "request": { "method": "GET", "url": "{{baseUrl}}/dashboard/overdue" }
+        }
+      ]
+    },
+    {
+      "name": "🔔 Notifications",
+      "item": [
+        {
+          "name": "Get My Notifications",
+          "request": { "method": "GET", "url": "{{baseUrl}}/notifications" }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": { "method": "GET", "url": "{{baseUrl}}/notifications/unread-count" }
+        },
+        {
+          "name": "Mark Single as Read",
+          "request": { "method": "PATCH", "url": "{{baseUrl}}/notifications/{{notificationId}}/read" }
+        },
+        {
+          "name": "Mark All as Read",
+          "request": { "method": "PATCH", "url": "{{baseUrl}}/notifications/read-all" }
+        },
+        {
+          "name": "Delete Notification",
+          "request": { "method": "DELETE", "url": "{{baseUrl}}/notifications/{{notificationId}}" }
+        }
+      ]
+    },
+    {
+      "name": "🔍 Global Search",
+      "item": [
+        {
+          "name": "Global Search Query",
+          "request": { "method": "GET", "url": "{{baseUrl}}/search?q=OAuth" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+// ============================================================
+// CHECKLIST models
+// ============================================================
+
+model Checklist {
+  id       String @id @default(cuid())
+  card_id  String
+  title    String
+  position Float
+
+  // Relations
+  card  Card            @relation(fields: [card_id], references: [id], onDelete: Cascade)
+  items ChecklistItem[]
+
+  @@index([card_id])
+  @@index([position])
+  @@map("checklists")
+}
+
+model ChecklistItem {
+  id           String    @id @default(cuid())
+  checklist_id String
+  title        String
+  is_completed Boolean   @default(false)
+  completed_at DateTime?
+  due_date     DateTime?
+  assigned_to  String?
+  position     Float
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  // Relations
+  checklist Checklist @relation(fields: [checklist_id], references: [id], onDelete: Cascade)
+  assignee  User?     @relation("ChecklistItemAssignee", fields: [assigned_to], references: [id], onDelete: SetNull)
+
+  @@index([checklist_id])
+  @@index([assigned_to])
+  @@index([position])
+  @@map("checklist_items")
+}

@@ -1,0 +1,33 @@
+// ============================================================
+// LABEL models
+// ============================================================
+
+model Label {
+  id       String  @id @default(cuid())
+  board_id String
+  name     String? // Optional text label (Trello supports pure color labels)
+  color    String  // Hex color or named color (e.g. "red", "#FF0000")
+
+  // Relations
+  board Board       @relation(fields: [board_id], references: [id], onDelete: Cascade)
+  cards CardLabel[]
+
+  @@unique([board_id, color, name])
+  @@index([board_id])
+  @@map("labels")
+}
+
+model CardLabel {
+  id       String @id @default(cuid())
+  card_id  String
+  label_id String
+
+  // Relations
+  card  Card  @relation(fields: [card_id], references: [id], onDelete: Cascade)
+  label Label @relation(fields: [label_id], references: [id], onDelete: Cascade)
+
+  @@unique([card_id, label_id])
+  @@index([card_id])
+  @@index([label_id])
+  @@map("card_labels")
+}

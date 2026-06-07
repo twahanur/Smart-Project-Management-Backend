@@ -1,0 +1,76 @@
+// ============================================================
+// CARD models
+// ============================================================
+
+model Card {
+  id              String       @id @default(cuid())
+  list_id         String
+  board_id        String
+  title           String
+  description     String?
+  due_date        DateTime?
+  due_reminder    Int?         // in minutes
+  priority        CardPriority @default(medium)
+  status          CardStatus   @default(todo)
+  position        Float
+  is_archived     Boolean      @default(false)
+  cover_color     String?      // Hex color code or name
+  cover_image_url String?
+  completed_at    DateTime?
+  created_by      String?
+  created_at      DateTime     @default(now())
+  updated_at      DateTime     @updatedAt
+
+  // Relations
+  list         BoardList     @relation(fields: [list_id], references: [id], onDelete: Cascade)
+  board        Board         @relation(fields: [board_id], references: [id], onDelete: Cascade)
+  creator      User?         @relation("CardCreator", fields: [created_by], references: [id], onDelete: SetNull)
+  members      CardMember[]
+  watchers     CardWatcher[]
+  checklists   Checklist[]
+  labels       CardLabel[]
+  comments     Comment[]
+  attachments  Attachment[]
+  activity_logs ActivityLog[]
+  custom_values CardCustomFieldValue[]
+
+  @@index([list_id])
+  @@index([board_id])
+  @@index([created_by])
+  @@index([status])
+  @@index([priority])
+  @@index([position])
+  @@map("cards")
+}
+
+model CardMember {
+  id         String   @id @default(cuid())
+  card_id    String
+  user_id    String
+  assigned_at DateTime @default(now())
+
+  // Relations
+  card Card @relation(fields: [card_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([card_id, user_id])
+  @@index([card_id])
+  @@index([user_id])
+  @@map("card_members")
+}
+
+model CardWatcher {
+  id        String   @id @default(cuid())
+  card_id   String
+  user_id   String
+  joined_at DateTime @default(now())
+
+  // Relations
+  card Card @relation(fields: [card_id], references: [id], onDelete: Cascade)
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([card_id, user_id])
+  @@index([card_id])
+  @@index([user_id])
+  @@map("card_watchers")
+}

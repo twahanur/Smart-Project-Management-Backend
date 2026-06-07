@@ -1,0 +1,25 @@
+// ============================================================
+// COMMENT model
+// ============================================================
+
+model Comment {
+  id         String   @id @default(cuid())
+  card_id    String
+  user_id    String
+  content    String
+  is_edited  Boolean  @default(false)
+  parent_id  String?
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  card    Card      @relation(fields: [card_id], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  parent  Comment?  @relation("CommentReplies", fields: [parent_id], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentReplies")
+
+  @@index([card_id])
+  @@index([user_id])
+  @@index([parent_id])
+  @@map("comments")
+}

@@ -1,0 +1,14 @@
+// ============================================================
+// Main Prisma Config — generator + datasource only
+// All models are in prisma/schema/ folder
+// ============================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
