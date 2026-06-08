@@ -1,19 +1,26 @@
-import prisma from '../../config/prisma';
-import { AppError } from '../../middlewares/errorHandler';
-import { logActivity } from '../../utils/activityLogger';
-import type { CreateListInput, UpdateListInput, ReorderListsInput } from './list.validation';
+import prisma from "../../config/prisma";
+import { AppError } from "../../middlewares/errorHandler";
+import { logActivity } from "../../utils/activityLogger";
+import { emitToBoardMembers } from "../../config/socket";
+import type {
+  CreateListInput,
+  UpdateListInput,
+  ReorderListsInput,
+} from "./list.validation";
 
 export const getBoardLists = async (boardId: string) => {
   return prisma.boardList.findMany({
     where: { board_id: boardId, is_archived: false },
-    orderBy: { position: 'asc' },
+    orderBy: { position: "asc" },
     include: {
       cards: {
         where: { is_archived: false },
-        orderBy: { position: 'asc' },
+        orderBy: { position: "asc" },
         include: {
           members: {
-            include: { user: { select: { id: true, name: true, avatar_url: true } } },
+            include: {
+              user: { select: { id: true, name: true, avatar_url: true } },
+            },
           },
           labels: {
             include: { label: true },
@@ -25,10 +32,14 @@ export const getBoardLists = async (boardId: string) => {
   });
 };
 
-export const createList = async (boardId: string, userId: string, data: CreateListInput) => {
+export const createList = async (
+  boardId: string,
+  userId: string,
+  data: CreateListInput,
+) => {
   const board = await prisma.board.findUnique({ where: { id: boardId } });
   if (!board) {
-    throw new AppError('Board not found', 404, 'BOARD_NOT_FOUND');
+    throw new AppError("Board not found", 404, "BOARD_NOT_FOUND");
   }
 
   // Calculate default position if not provided
@@ -36,7 +47,7 @@ export const createList = async (boardId: string, userId: string, data: CreateLi
   if (position === undefined) {
     const lastList = await prisma.boardList.findFirst({
       where: { board_id: boardId },
-      orderBy: { position: 'desc' },
+      orderBy: { position: "desc" },
       select: { position: true },
     });
     position = lastList ? lastList.position + 1000 : 1000;
@@ -53,8 +64,8 @@ export const createList = async (boardId: string, userId: string, data: CreateLi
   await logActivity({
     userId,
     boardId,
-    action_type: 'created',
-    entity_type: 'list',
+    action_type: "created",
+    entity_type: "list",
     entity_id: list.id,
     description: `created list "${list.name}"`,
   });
@@ -62,13 +73,17 @@ export const createList = async (boardId: string, userId: string, data: CreateLi
   return list;
 };
 
-export const updateList = async (listId: string, userId: string, data: UpdateListInput) => {
+export const updateList = async (
+  listId: string,
+  userId: string,
+  data: UpdateListInput,
+) => {
   const list = await prisma.boardList.findUnique({
     where: { id: listId },
     select: { board_id: true, name: true },
   });
   if (!list) {
-    throw new AppError('List not found', 404, 'LIST_NOT_FOUND');
+    throw new AppError("List not found", 404, "LIST_NOT_FOUND");
   }
 
   const updated = await prisma.boardList.update({
@@ -80,11 +95,11 @@ export const updateList = async (listId: string, userId: string, data: UpdateLis
   await logActivity({
     userId,
     boardId: list.board_id,
-    action_type: isArchiveToggle ? 'updated' : 'updated',
-    entity_type: 'list',
+    action_type: isArchiveToggle ? "updated" : "updated",
+    entity_type: "list",
     entity_id: listId,
     description: isArchiveToggle
-      ? `${data.is_archived ? 'archived' : 'unarchived'} list "${list.name}"`
+      ? `${data.is_archived ? "archived" : "unarchived"} list "${list.name}"`
       : `renamed list to "${updated.name}"`,
   });
 
@@ -97,7 +112,7 @@ export const deleteList = async (listId: string, userId: string) => {
     select: { board_id: true, name: true },
   });
   if (!list) {
-    throw new AppError('List not found', 404, 'LIST_NOT_FOUND');
+    throw new AppError("List not found", 404, "LIST_NOT_FOUND");
   }
 
   await prisma.boardList.delete({ where: { id: listId } });
@@ -105,31 +120,41 @@ export const deleteList = async (listId: string, userId: string) => {
   await logActivity({
     userId,
     boardId: list.board_id,
-    action_type: 'deleted',
-    entity_type: 'list',
+    action_type: "deleted",
+    entity_type: "list",
     entity_id: listId,
     description: `deleted list "${list.name}" permanently`,
   });
 };
 
-export const reorderLists = async (boardId: string, userId: string, lists: ReorderListsInput['lists']) => {
+export const reorderLists = async (
+  boardId: string,
+  userId: string,
+  lists: ReorderListsInput["lists"],
+) => {
   // Use transaction to update positions efficiently
   await prisma.$transaction(
     lists.map((item) =>
       prisma.boardList.update({
         where: { id: item.id, board_id: boardId },
         data: { position: item.position },
-      })
-    )
+      }),
+    ),
   );
 
   await logActivity({
     userId,
     boardId,
-    action_type: 'updated',
-    entity_type: 'list',
+    action_type: "updated",
+    entity_type: "list",
     entity_id: boardId,
     description: `reordered board lists`,
+  });
+
+  await emitToBoardMembers(boardId, "board:lists-reordered", {
+    boardId,
+    reorderedByUserId: userId,
+    lists,
   });
 };
 
@@ -150,13 +175,13 @@ export const copyList = async (listId: string, userId: string) => {
   });
 
   if (!sourceList) {
-    throw new AppError('Source list not found', 404, 'LIST_NOT_FOUND');
+    throw new AppError("Source list not found", 404, "LIST_NOT_FOUND");
   }
 
   // Calculate position for the new copied list
   const lastList = await prisma.boardList.findFirst({
     where: { board_id: sourceList.board_id },
-    orderBy: { position: 'desc' },
+    orderBy: { position: "desc" },
     select: { position: true },
   });
   const newPosition = lastList ? lastList.position + 1000 : 1000;
@@ -225,8 +250,8 @@ export const copyList = async (listId: string, userId: string) => {
   await logActivity({
     userId,
     boardId: sourceList.board_id,
-    action_type: 'created',
-    entity_type: 'list',
+    action_type: "created",
+    entity_type: "list",
     entity_id: copiedList.id,
     description: `copied list "${sourceList.name}" to "${copiedList.name}"`,
   });
@@ -234,13 +259,17 @@ export const copyList = async (listId: string, userId: string) => {
   return getBoardLists(sourceList.board_id);
 };
 
-export const sortListCards = async (listId: string, userId: string, sortBy: 'title' | 'due_date' | 'created_at' | 'priority') => {
+export const sortListCards = async (
+  listId: string,
+  userId: string,
+  sortBy: "title" | "due_date" | "created_at" | "priority",
+) => {
   const list = await prisma.boardList.findUnique({
     where: { id: listId },
     select: { board_id: true, name: true },
   });
   if (!list) {
-    throw new AppError('List not found', 404, 'LIST_NOT_FOUND');
+    throw new AppError("List not found", 404, "LIST_NOT_FOUND");
   }
 
   // Get all active cards under this list
@@ -249,17 +278,20 @@ export const sortListCards = async (listId: string, userId: string, sortBy: 'tit
   });
 
   // Sort them in-memory based on selected parameter
-  if (sortBy === 'title') {
+  if (sortBy === "title") {
     cards.sort((a, b) => a.title.localeCompare(b.title));
-  } else if (sortBy === 'due_date') {
+  } else if (sortBy === "due_date") {
     cards.sort((a, b) => {
       if (!a.due_date) return 1;
       if (!b.due_date) return -1;
       return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
     });
-  } else if (sortBy === 'created_at') {
-    cards.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-  } else if (sortBy === 'priority') {
+  } else if (sortBy === "created_at") {
+    cards.sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+  } else if (sortBy === "priority") {
     const weights: Record<string, number> = { high: 1, medium: 2, low: 3 };
     cards.sort((a, b) => {
       const weightA = weights[a.priority] || 2;
@@ -274,15 +306,25 @@ export const sortListCards = async (listId: string, userId: string, sortBy: 'tit
       prisma.card.update({
         where: { id: card.id },
         data: { position: (index + 1) * 1000 },
-      })
-    )
+      }),
+    ),
   );
+
+  await emitToBoardMembers(list.board_id, "board:cards-reordered", {
+    boardId: list.board_id,
+    reorderedByUserId: userId,
+    cards: cards.map((card, index) => ({
+      id: card.id,
+      list_id: listId,
+      position: (index + 1) * 1000,
+    })),
+  });
 
   await logActivity({
     userId,
     boardId: list.board_id,
-    action_type: 'updated',
-    entity_type: 'list',
+    action_type: "updated",
+    entity_type: "list",
     entity_id: listId,
     description: `sorted cards in list "${list.name}" by ${sortBy}`,
   });

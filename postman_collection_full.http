@@ -1,0 +1,473 @@
+### Collection variables (set these before running)
+# Replace values as needed or use VS Code REST Client environment variables
+@baseUrl = http://localhost:5000/api
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtcTJvcXEzczAwMDBmcm54cnZ5ZnY0enoiLCJlbWFpbCI6ImFkbWluQGRlbW8uY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzgwODk3NzE5LCJleHAiOjE3ODA5ODQxMTl9.dDMU8t32eN5e_OB5FxQhQglxJ6w9ZIo_aR6Yz0YdDOY
+
+################################################################
+# AUTH
+################################################################
+
+### Register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Jane Developer",
+  "email": "jane.dev@example.com",
+  "password": "Jane@1234",
+  "role": "team_member"
+}
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@demo.com",
+  "password": "Admin@123"
+}
+
+### Demo Login (PM)
+POST {{baseUrl}}/auth/demo-login
+Content-Type: application/json
+
+{
+  "role": "project_manager"
+}
+
+### Demo Login (Member)
+POST {{baseUrl}}/auth/demo-login
+Content-Type: application/json
+
+{
+  "role": "team_member"
+}
+
+### Refresh Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "<paste_refresh_token_if_needed>"
+}
+
+### Logout
+POST {{baseUrl}}/auth/logout
+
+################################################################
+# WORKSPACES
+################################################################
+
+### Get My Workspaces
+GET {{baseUrl}}/workspaces
+Authorization: Bearer {{accessToken}}
+
+### Create Workspace
+POST {{baseUrl}}/workspaces
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Product Ops Workspace",
+  "description": "For operations & roadmap plans"
+}
+workspaceId = cmq2oqr3z0009frnxvya4k255
+### Get Workspace by ID
+GET {{baseUrl}}/workspaces/cmq2oqr3z0009frnxvya4k255
+Authorization: Bearer {{accessToken}}
+
+### Update Workspace
+PATCH {{baseUrl}}/workspaces/{{workspaceId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Product Ops Workspace Updated"
+}
+
+### Add Member to Workspace
+POST {{baseUrl}}/workspaces/{{workspaceId}}/members
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "email": "member@demo.com",
+  "role": "member"
+}
+
+### Update Workspace Member Role
+PATCH {{baseUrl}}/workspaces/{{workspaceId}}/members/{{memberId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "role": "admin"
+}
+
+### Remove Member from Workspace
+DELETE {{baseUrl}}/workspaces/{{workspaceId}}/members/{{memberId}}
+Authorization: Bearer {{accessToken}}
+
+### Delete Workspace
+DELETE {{baseUrl}}/workspaces/{{workspaceId}}
+Authorization: Bearer {{accessToken}}
+
+################################################################
+# BOARDS
+################################################################
+
+### Get Workspace Boards
+GET {{baseUrl}}/boards/workspaces/{{workspaceId}}/boards
+Authorization: Bearer {{accessToken}}
+
+### Create Board
+POST {{baseUrl}}/boards/workspaces/{{workspaceId}}/boards
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Mobile App Board",
+  "description": "Kanban board for android/ios redesign",
+  "background_color": "#3b82f6",
+  "visibility": "workspace"
+}
+@boardId = cmq4r7wdw0009tk3dq9opgjg7
+### Get Board Details by ID
+GET {{baseUrl}}/boards/{{boardId}}
+Authorization: Bearer {{accessToken}}
+
+### Update Board Details
+PATCH {{baseUrl}}/boards/{{boardId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Mobile App Board Renamed",
+  "status": "active"
+}
+
+### Toggle Star Board
+POST {{baseUrl}}/boards/cmq4r7wdw0009tk3dq9opgjg7/star
+Authorization: Bearer {{accessToken}}
+
+### Copy Board
+POST {{baseUrl}}/boards/{{boardId}}/copy
+Authorization: Bearer {{accessToken}}
+
+### Add Member to Board
+POST {{baseUrl}}/boards/{{boardId}}/members
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "email": "member@demo.com",
+  "role": "member"
+}
+
+### Update Board Member Role
+PATCH {{baseUrl}}/boards/{{boardId}}/members/{{memberId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "role": "admin"
+}
+
+### Remove Member from Board
+DELETE {{baseUrl}}/boards/{{boardId}}/members/{{memberId}}
+Authorization: Bearer {{accessToken}}
+
+### Delete Board
+DELETE {{baseUrl}}/boards/{{boardId}}
+Authorization: Bearer {{accessToken}}
+
+################################################################
+# LISTS
+################################################################
+
+### Get Board Lists
+GET {{baseUrl}}/boards/{{boardId}}/lists
+Authorization: Bearer {{accessToken}}
+
+### Create Board List
+POST {{baseUrl}}/boards/{{boardId}}/lists
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Testing Q/A"
+}
+
+### Update Board List
+PATCH {{baseUrl}}/boards/{{boardId}}/lists/{{listId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Testing Q/A Renamed"
+}
+
+### Reorder Board Lists
+PATCH {{baseUrl}}/boards/{{boardId}}/lists/reorder
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "lists": [
+    { "id": "{{listId}}", "position": 1500 }
+  ]
+}
+
+### Sort List Cards
+POST {{baseUrl}}/boards/{{boardId}}/lists/{{listId}}/sort
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "sortBy": "title"
+}
+
+### Delete Board List (Archive)
+DELETE {{baseUrl}}/boards/{{boardId}}/lists/{{listId}}
+Authorization: Bearer {{accessToken}}
+
+################################################################
+# CARDS
+################################################################
+
+### Create Card
+POST {{baseUrl}}/boards/{{boardId}}/lists/{{listId}}/cards
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "title": "Implement OAuth Flow",
+  "description": "Integrate signin with google and apple ID",
+  "priority": "high"
+}
+
+### Get Card Details
+GET {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}
+Authorization: Bearer {{accessToken}}
+
+### Update Card Details
+PATCH {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "status": "in_progress",
+  "description": "Updated description mapping"
+}
+
+### Move Card to List
+POST {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/move
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "targetListId": "{{listId}}",
+  "position": 2000
+}
+
+### Assign Card to Member
+POST {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/assign
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "userId": "{{memberId}}"
+}
+
+### Unassign Member from Card
+DELETE {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/assign/{{memberId}}
+Authorization: Bearer {{accessToken}}
+
+### Toggle Watch Card
+POST {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/watch
+Authorization: Bearer {{accessToken}}
+
+### Duplicate Card
+POST {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/duplicate
+Authorization: Bearer {{accessToken}}
+
+### Delete Card
+DELETE {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}
+Authorization: Bearer {{accessToken}}
+
+################################################################
+# CHECKLISTS
+################################################################
+
+### Create Checklist
+POST {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/checklists
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "title": "Security Tests"
+}
+
+### Add Checklist Item
+POST {{baseUrl}}/boards/{{boardId}}/checklists/{{checklistId}}/items
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "title": "Verify CSRF protection enabled"
+}
+
+### Toggle Checklist Item Status
+PATCH {{baseUrl}}/boards/{{boardId}}/checklists/{{checklistId}}/items/{{itemId}}/toggle
+Authorization: Bearer {{accessToken}}
+
+### Delete Checklist
+DELETE {{baseUrl}}/boards/{{boardId}}/checklists/{{checklistId}}
+Authorization: Bearer {{accessToken}}
+
+################################################################
+# LABELS
+################################################################
+
+### Create Board Label
+POST {{baseUrl}}/boards/{{boardId}}/labels
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Hotfix Required",
+  "color": "#dc2626"
+}
+
+### Assign Label to Card
+POST {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/labels
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "labelId": "{{labelId}}"
+}
+
+### Unassign Label from Card
+DELETE {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/labels/{{labelId}}
+Authorization: Bearer {{accessToken}}
+
+################################################################
+# COMMENTS
+################################################################
+
+### Get Card Comments
+GET {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/comments
+Authorization: Bearer {{accessToken}}
+
+### Create Comment
+POST {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/comments
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "content": "OAuth configurations are updated in vault!"
+}
+
+### Create Threaded Reply
+POST {{baseUrl}}/boards/{{boardId}}/cards/{{cardId}}/comments
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "content": "Perfect, thanks for updating!",
+  "parentId": "{{commentId}}"
+}
+
+################################################################
+# CUSTOM FIELDS
+################################################################
+
+### Create Custom Field Def
+POST {{baseUrl}}/boards/{{boardId}}/custom-fields
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "name": "Story Points",
+  "type": "number"
+}
+
+### Get Board Custom Fields Defs
+GET {{baseUrl}}/boards/{{boardId}}/custom-fields
+Authorization: Bearer {{accessToken}}
+
+### Set Card Custom Field Value
+POST {{baseUrl}}/boards/{{boardId}}/custom-fields/cards/{{cardId}}/fields/{{customFieldId}}
+Content-Type: application/json
+Authorization: Bearer {{accessToken}}
+
+{
+  "value": "8"
+}
+
+### Get Card Custom Field Values
+GET {{baseUrl}}/boards/{{boardId}}/custom-fields/cards/{{cardId}}/values
+Authorization: Bearer {{accessToken}}
+
+################################################################
+# DASHBOARD
+################################################################
+
+### Get KPIs Stats
+
+GET {{baseUrl}}/dashboard
+Authorization: Bearer {{accessToken}}
+
+
+GET {{baseUrl}}/dashboard/stats
+Authorization: Bearer {{accessToken}}
+
+### Member Workload breakdown
+GET {{baseUrl}}/dashboard/workload
+Authorization: Bearer {{accessToken}}
+
+### Overdue Cards
+GET {{baseUrl}}/dashboard/overdue
+Authorization: Bearer {{accessToken}}
+
+################################################################
+# NOTIFICATIONS
+################################################################
+
+### Get My Notifications
+GET {{baseUrl}}/notifications
+Authorization: Bearer {{accessToken}}
+
+### Get Unread Count
+GET {{baseUrl}}/notifications/unread-count
+Authorization: Bearer {{accessToken}}
+
+### Mark Single as Read
+PATCH {{baseUrl}}/notifications/{{notificationId}}/read
+Authorization: Bearer {{accessToken}}
+
+### Mark All as Read
+PATCH {{baseUrl}}/notifications/read-all
+Authorization: Bearer {{accessToken}}
+
+### Delete Notification
+DELETE {{baseUrl}}/notifications/{{notificationId}}
+Authorization: Bearer {{accessToken}}
+
+################################################################
+# SEARCH
+################################################################
+
+### Global Search Query
+GET {{baseUrl}}/search?q=OAuth
+Authorization: Bearer {{accessToken}}
+
+################################################################
+# HEALTH (server)
+################################################################
+
+### Health check (server)
+GET http://localhost:5000/health
+
+# End of collection

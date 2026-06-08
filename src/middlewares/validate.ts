@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import { ZodSchema } from 'zod';
+import { Request, Response, NextFunction } from "express";
+import { ZodSchema } from "zod";
 
 export const validate =
   (schema: ZodSchema) =>
@@ -9,13 +9,14 @@ export const validate =
       params: req.params,
       query: req.query,
     });
+    console.log("validation: ", result);
 
     if (!result.success) {
       res.status(400).json({
         success: false,
         error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Invalid input data',
+          code: "VALIDATION_ERROR",
+          message: "Invalid input data",
           details: result.error.flatten().fieldErrors,
         },
       });

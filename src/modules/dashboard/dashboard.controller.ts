@@ -58,3 +58,11 @@ export const getProjectSummaries = async (req: Request, res: Response, next: Nex
     sendSuccess(res, data, 'Project summaries fetched');
   } catch (err) { next(err); }
 };
+
+export const getDashboardData = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const days = Number(req.query.days) || 7;
+    const data = await dashboardService.getDashboardData(req.user!.id, req.user!.role, days);
+    sendSuccess(res, data, 'Dashboard data fetched');
+  } catch (err) { next(err); }
+};

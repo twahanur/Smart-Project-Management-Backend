@@ -1,0 +1,21 @@
+# Sample HTTP requests for local testing
+# Run these using VS Code REST Client or with curl/httpie from terminal.
+
+### Health check
+GET http://localhost:5000/health
+
+### Demo login (creates a demo user and returns access token)
+POST http://localhost:5000/api/auth/demo-login
+Content-Type: application/json
+
+{
+  "role": "project_manager"
+}
+
+# Example curl commands:
+# curl http://localhost:5000/health
+# curl -X POST http://localhost:5000/api/auth/demo-login -H "Content-Type: application/json" -d '{"role":"project_manager"}'
+
+# If you get an access token from demo-login, use it in subsequent requests:
+# GET http://localhost:5000/api/users
+# Authorization: Bearer <ACCESS_TOKEN>
