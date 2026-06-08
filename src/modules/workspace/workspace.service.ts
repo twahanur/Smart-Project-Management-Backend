@@ -18,7 +18,7 @@ const getMemberRole = async (workspaceId: string, userId: string): Promise<Works
 };
 
 export const getMyWorkspaces = async (userId: string) => {
-  return prisma.workspace.findMany({
+  const workspaces = await prisma.workspace.findMany({
     where: {
       members: { some: { user_id: userId } },
     },
@@ -28,11 +28,84 @@ export const getMyWorkspaces = async (userId: string) => {
           user: { select: { id: true, name: true, email: true, avatar_url: true } },
         },
       },
-      _count: {
-        select: { boards: true },
+      boards: {
+        select: {
+          id: true,
+          status: true,
+          cards: {
+            select: {
+              id: true,
+              status: true,
+              priority: true,
+              due_date: true,
+            },
+          },
+        },
       },
     },
     orderBy: { created_at: 'desc' },
+  });
+
+  const now = new Date();
+
+  return workspaces.map((workspace) => {
+    const boards = workspace.boards || [];
+    const membersCount = workspace.members.length;
+    const boardsCount = boards.length;
+    const activeBoardsCount = boards.filter((b) => b.status === 'active').length;
+    const completedBoardsCount = boards.filter((b) => b.status === 'completed').length;
+
+    let totalCards = 0;
+    let todoCards = 0;
+    let inProgressCards = 0;
+    let completedCards = 0;
+    let highPriorityCards = 0;
+    let overdueCards = 0;
+
+    for (const board of boards) {
+      const cards = board.cards || [];
+      for (const card of cards) {
+        totalCards++;
+        if (card.status === 'todo') {
+          todoCards++;
+        } else if (card.status === 'in_progress') {
+          inProgressCards++;
+        } else if (card.status === 'completed') {
+          completedCards++;
+        }
+
+        if (card.priority === 'high') {
+          highPriorityCards++;
+        }
+
+        if (card.status !== 'completed' && card.due_date && new Date(card.due_date) < now) {
+          overdueCards++;
+        }
+      }
+    }
+
+    const { boards: _, ...rest } = workspace;
+
+    return {
+      ...rest,
+      _count: {
+        boards: boardsCount,
+      },
+      summary: {
+        membersCount,
+        boardsCount,
+        activeBoardsCount,
+        completedBoardsCount,
+        cardsCount: {
+          total: totalCards,
+          todo: todoCards,
+          inProgress: inProgressCards,
+          completed: completedCards,
+        },
+        highPriorityCardsCount: highPriorityCards,
+        overdueCardsCount: overdueCards,
+      },
+    };
   });
 };
 
@@ -81,6 +154,16 @@ export const getWorkspaceById = async (workspaceId: string, userId: string) => {
     include: {
       boards: {
         orderBy: { created_at: 'desc' },
+        include: {
+          cards: {
+            select: {
+              id: true,
+              status: true,
+              priority: true,
+              due_date: true,
+            },
+          },
+        },
       },
       members: {
         include: {
@@ -94,7 +177,63 @@ export const getWorkspaceById = async (workspaceId: string, userId: string) => {
     throw new AppError('Workspace not found', 404, 'WORKSPACE_NOT_FOUND');
   }
 
-  return { ...workspace, myRole: role };
+  const boards = workspace.boards || [];
+  const membersCount = workspace.members.length;
+  const boardsCount = boards.length;
+  const activeBoardsCount = boards.filter((b) => b.status === 'active').length;
+  const completedBoardsCount = boards.filter((b) => b.status === 'completed').length;
+
+  let totalCards = 0;
+  let todoCards = 0;
+  let inProgressCards = 0;
+  let completedCards = 0;
+  let highPriorityCards = 0;
+  let overdueCards = 0;
+
+  const now = new Date();
+  for (const board of boards) {
+    const cards = board.cards || [];
+    for (const card of cards) {
+      totalCards++;
+      if (card.status === 'todo') {
+        todoCards++;
+      } else if (card.status === 'in_progress') {
+        inProgressCards++;
+      } else if (card.status === 'completed') {
+        completedCards++;
+      }
+
+      if (card.priority === 'high') {
+        highPriorityCards++;
+      }
+
+      if (card.status !== 'completed' && card.due_date && new Date(card.due_date) < now) {
+        overdueCards++;
+      }
+    }
+  }
+
+  const cleanBoards = boards.map(({ cards, ...boardRest }) => boardRest);
+
+  return {
+    ...workspace,
+    boards: cleanBoards,
+    myRole: role,
+    summary: {
+      membersCount,
+      boardsCount,
+      activeBoardsCount,
+      completedBoardsCount,
+      cardsCount: {
+        total: totalCards,
+        todo: todoCards,
+        inProgress: inProgressCards,
+        completed: completedCards,
+      },
+      highPriorityCardsCount: highPriorityCards,
+      overdueCardsCount: overdueCards,
+    },
+  };
 };
 
 export const updateWorkspace = async (workspaceId: string, userId: string, data: UpdateWorkspaceInput) => {

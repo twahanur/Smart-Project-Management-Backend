@@ -1,20 +1,25 @@
-import prisma from '../../config/prisma';
-import { AppError } from '../../middlewares/errorHandler';
-import { logActivity } from '../../utils/activityLogger';
-import { CustomFieldType } from '@prisma/client';
-import type { CreateCustomFieldInput } from './customField.validation';
+import prisma from "../../config/prisma";
+import { AppError } from "../../middlewares/errorHandler";
+import { logActivity } from "../../utils/activityLogger";
+import { emitToBoardMembers } from "../../config/socket";
+import { CustomFieldType } from "@prisma/client";
+import type { CreateCustomFieldInput } from "./customField.validation";
 
 export const getBoardCustomFields = async (boardId: string) => {
   return prisma.customField.findMany({
     where: { board_id: boardId },
-    orderBy: { created_at: 'asc' },
+    orderBy: { created_at: "asc" },
   });
 };
 
-export const createCustomField = async (boardId: string, userId: string, data: CreateCustomFieldInput) => {
+export const createCustomField = async (
+  boardId: string,
+  userId: string,
+  data: CreateCustomFieldInput,
+) => {
   const board = await prisma.board.findUnique({ where: { id: boardId } });
   if (!board) {
-    throw new AppError('Board not found', 404, 'BOARD_NOT_FOUND');
+    throw new AppError("Board not found", 404, "BOARD_NOT_FOUND");
   }
 
   const customField = await prisma.customField.create({
@@ -29,10 +34,16 @@ export const createCustomField = async (boardId: string, userId: string, data: C
   await logActivity({
     userId,
     boardId,
-    action_type: 'created',
-    entity_type: 'board',
+    action_type: "created",
+    entity_type: "board",
     entity_id: boardId,
     description: `created custom field "${customField.name}" of type ${customField.type}`,
+  });
+
+  await emitToBoardMembers(boardId, "board:custom-field-created", {
+    boardId,
+    createdByUserId: userId,
+    field: customField,
   });
 
   return customField;
@@ -44,7 +55,7 @@ export const deleteCustomField = async (fieldId: string, userId: string) => {
     select: { board_id: true, name: true },
   });
   if (!field) {
-    throw new AppError('Custom field not found', 404, 'FIELD_NOT_FOUND');
+    throw new AppError("Custom field not found", 404, "FIELD_NOT_FOUND");
   }
 
   await prisma.customField.delete({ where: { id: fieldId } });
@@ -52,37 +63,66 @@ export const deleteCustomField = async (fieldId: string, userId: string) => {
   await logActivity({
     userId,
     boardId: field.board_id,
-    action_type: 'deleted',
-    entity_type: 'board',
+    action_type: "deleted",
+    entity_type: "board",
     entity_id: field.board_id,
     description: `deleted custom field "${field.name}"`,
   });
+
+  await emitToBoardMembers(field.board_id, "board:custom-field-deleted", {
+    boardId: field.board_id,
+    deletedByUserId: userId,
+    fieldId,
+    fieldName: field.name,
+  });
 };
 
-export const setCardCustomFieldValue = async (boardId: string, cardId: string, fieldId: string, userId: string, value: string) => {
+export const setCardCustomFieldValue = async (
+  boardId: string,
+  cardId: string,
+  fieldId: string,
+  userId: string,
+  value: string,
+) => {
   const card = await prisma.card.findUnique({ where: { id: cardId } });
   if (!card) {
-    throw new AppError('Card not found', 404, 'CARD_NOT_FOUND');
+    throw new AppError("Card not found", 404, "CARD_NOT_FOUND");
   }
 
   const field = await prisma.customField.findUnique({ where: { id: fieldId } });
   if (!field) {
-    throw new AppError('Custom field definition not found', 404, 'FIELD_NOT_FOUND');
+    throw new AppError(
+      "Custom field definition not found",
+      404,
+      "FIELD_NOT_FOUND",
+    );
   }
 
   // Validate value type
   if (field.type === CustomFieldType.number) {
     const num = Number(value);
     if (isNaN(num)) {
-      throw new AppError(`Value "${value}" is not a valid number`, 400, 'INVALID_VALUE');
+      throw new AppError(
+        `Value "${value}" is not a valid number`,
+        400,
+        "INVALID_VALUE",
+      );
     }
   } else if (field.type === CustomFieldType.checkbox) {
-    if (value !== 'true' && value !== 'false') {
-      throw new AppError(`Value for checkbox must be "true" or "false"`, 400, 'INVALID_VALUE');
+    if (value !== "true" && value !== "false") {
+      throw new AppError(
+        `Value for checkbox must be "true" or "false"`,
+        400,
+        "INVALID_VALUE",
+      );
     }
   } else if (field.type === CustomFieldType.dropdown) {
     if (!field.options.includes(value)) {
-      throw new AppError(`Value "${value}" is not in dropdown options [${field.options.join(', ')}]`, 400, 'INVALID_VALUE');
+      throw new AppError(
+        `Value "${value}" is not in dropdown options [${field.options.join(", ")}]`,
+        400,
+        "INVALID_VALUE",
+      );
     }
   }
 
@@ -97,10 +137,20 @@ export const setCardCustomFieldValue = async (boardId: string, cardId: string, f
     userId,
     boardId,
     cardId,
-    action_type: 'updated',
-    entity_type: 'card',
+    action_type: "updated",
+    entity_type: "card",
     entity_id: cardId,
     description: `set custom field "${field.name}" to "${value}"`,
+  });
+
+  await emitToBoardMembers(boardId, "board:card-custom-field-updated", {
+    boardId,
+    updatedByUserId: userId,
+    cardId,
+    fieldId,
+    field,
+    value,
+    valueRecord: upserted,
   });
 
   return upserted;
