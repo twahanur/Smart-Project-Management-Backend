@@ -5,6 +5,7 @@ import { authenticate } from '../../middlewares/authenticate';
 const router = Router();
 router.use(authenticate);
 
+router.get('/', dashboardController.getDashboardData);
 router.get('/stats', dashboardController.getStats);
 router.get('/task-status', dashboardController.getTaskStatusDistribution);
 router.get('/priority-breakdown', dashboardController.getPriorityBreakdown);
