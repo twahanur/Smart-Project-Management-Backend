@@ -10,12 +10,16 @@ enum UserRole {
 
 enum WorkspaceRole {
   owner
-  admin
+  admin 
+  project_manager
+  team_member
   member
 }
 
 enum BoardRole {
   admin
+  project_manager
+  team_member
   member
   observer
 }

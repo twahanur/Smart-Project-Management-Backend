@@ -67,7 +67,12 @@ export const workspaceAdmin = async (
       where: { workspace_id_user_id: { workspace_id: workspaceId, user_id: userId } },
     });
 
-    if (!member || (member.role !== WorkspaceRole.owner && member.role !== WorkspaceRole.admin)) {
+    if (
+      !member ||
+      (member.role !== WorkspaceRole.owner &&
+        member.role !== WorkspaceRole.admin &&
+        member.role !== WorkspaceRole.project_manager)
+    ) {
       sendError(res, 'Access denied. Workspace administrators only.', 403, 'FORBIDDEN');
       return;
     }

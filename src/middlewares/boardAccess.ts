@@ -47,7 +47,11 @@ export const boardAccess = async (
     const workspaceMember = board.workspace.members[0];
     const boardMember = board.members[0];
 
-    const isWsAdmin = workspaceMember && (workspaceMember.role === WorkspaceRole.owner || workspaceMember.role === WorkspaceRole.admin);
+    const isWsAdmin = workspaceMember && (
+      workspaceMember.role === WorkspaceRole.owner ||
+      workspaceMember.role === WorkspaceRole.admin ||
+      workspaceMember.role === WorkspaceRole.project_manager
+    );
 
     // If public visibility, anyone who is logged in can view
     if (board.visibility === BoardVisibility.public) {
@@ -132,7 +136,11 @@ export const boardAdmin = async (
 
     // Workspace owner/admin has full admin privileges over all boards in the workspace
     const workspaceMember = board.workspace.members[0];
-    const isWsAdmin = workspaceMember && (workspaceMember.role === WorkspaceRole.owner || workspaceMember.role === WorkspaceRole.admin);
+    const isWsAdmin = workspaceMember && (
+      workspaceMember.role === WorkspaceRole.owner ||
+      workspaceMember.role === WorkspaceRole.admin ||
+      workspaceMember.role === WorkspaceRole.project_manager
+    );
 
     if (isWsAdmin) {
       next();

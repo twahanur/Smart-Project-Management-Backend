@@ -23,7 +23,6 @@ import notificationRoutes from "./modules/notification/notification.routes";
 import dashboardRoutes from "./modules/dashboard/dashboard.routes";
 import searchRoutes from "./modules/search/search.routes";
 import customFieldRoutes from "./modules/customField/customField.routes";
-import prisma from "./config/prisma";
 
 const app = express();
 
@@ -66,15 +65,6 @@ const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   message: "Too many login attempts, please try again later.",
-});
-app.get("/db-test", async (_, res) => {
-  try {
-    const users = await prisma.user.findMany();
-    res.json(users);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json(error);
-  }
 });
 app.use("/api/auth", authLimiter);
 app.use("/api", generalLimiter);
